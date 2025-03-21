@@ -24,20 +24,6 @@ namespace FootballAdminSeleniumTest
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
         }
 
-        private void TakeScreenshot(string name)
-        {
-            try
-            {
-                string fileName = $"{DateTime.Now:yyyyMMdd_HHmmss}_{name}.png";
-                Console.WriteLine($"Screenshot taken: {fileName}");
-                // Uncomment to save: ((ITakesScreenshot)driver).GetScreenshot().SaveAsFile(fileName, ScreenshotImageFormat.Png);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to take screenshot {name}: {ex.Message}");
-            }
-        }
-
         private IWebElement WaitForElement(By locator, int timeoutInSeconds = 10)
         {
             try
@@ -55,41 +41,35 @@ namespace FootballAdminSeleniumTest
             catch (WebDriverTimeoutException)
             {
                 Console.WriteLine($"Element not found: {locator}");
-                TakeScreenshot($"element_not_found_{locator.ToString().Replace('/', '_')}");
                 throw;
             }
         }
-
         private bool SetDateField(IWebElement dateField, string dateValue)
         {
             Console.WriteLine($"Setting date field to: {dateValue}");
             try
             {
-                // Scroll to element
                 js.ExecuteScript("arguments[0].scrollIntoView(true);", dateField);
                 Thread.Sleep(300);
-
-                // Try JavaScript approach first
+                
                 js.ExecuteScript($"arguments[0].value='{dateValue}'", dateField);
                 js.ExecuteScript("arguments[0].dispatchEvent(new Event('change', { 'bubbles': true }))", dateField);
                 js.ExecuteScript("arguments[0].dispatchEvent(new Event('input', { 'bubbles': true }))", dateField);
-                Thread.Sleep(500);
+                Thread.Sleep(300);
 
                 string currentValue = dateField.GetAttribute("value");
                 if (currentValue == dateValue || currentValue.Contains(dateValue.Split('-')[0]))
                     return true;
-
-                // Try SendKeys approach
+                
                 dateField.Clear();
                 dateField.SendKeys(dateValue);
                 dateField.SendKeys(Keys.Tab);
-                Thread.Sleep(500);
+                Thread.Sleep(300);
 
                 currentValue = dateField.GetAttribute("value");
                 if (currentValue == dateValue || currentValue.Contains(dateValue.Split('-')[0]))
                     return true;
-
-                // Try alternative format
+                
                 string[] dateParts = dateValue.Split('-');
                 if (dateParts.Length == 3)
                 {
@@ -97,7 +77,7 @@ namespace FootballAdminSeleniumTest
                     dateField.Clear();
                     dateField.SendKeys(altFormat);
                     dateField.SendKeys(Keys.Tab);
-                    Thread.Sleep(500);
+                    Thread.Sleep(300);
 
                     currentValue = dateField.GetAttribute("value");
                     if (currentValue == dateValue || currentValue.Contains(dateParts[0]))
@@ -113,7 +93,6 @@ namespace FootballAdminSeleniumTest
                 return false;
             }
         }
-
         private void ClickElement(By[] selectors, string elementType)
         {
             foreach (var selector in selectors)
@@ -126,8 +105,7 @@ namespace FootballAdminSeleniumTest
                     return;
                 }
             }
-
-            // Fallback to any button
+            
             var allButtons = driver.FindElements(By.TagName("button"));
             if (allButtons.Count > 0)
             {
@@ -140,7 +118,6 @@ namespace FootballAdminSeleniumTest
                 throw new Exception($"Could not find any buttons for {elementType}");
             }
         }
-
         public void AddEventWithDateFocus()
         {
             try
@@ -148,15 +125,12 @@ namespace FootballAdminSeleniumTest
                 // Step 1: Login
                 Console.WriteLine("STEP 1: LOGIN TO ADMIN PANEL");
                 driver.Navigate().GoToUrl("https://focistak.netlify.app/admin");
-                TakeScreenshot("1_login_page");
-                Thread.Sleep(2000);
+                Thread.Sleep(1000);
 
                 WaitForElement(By.Id("email")).SendKeys("admin@example.hu");
                 WaitForElement(By.Id("password")).SendKeys("Admin123$");
                 WaitForElement(By.CssSelector("button[type='submit']")).Click();
-                TakeScreenshot("2_after_login_click");
-                Thread.Sleep(5000);
-                TakeScreenshot("3_admin_panel");
+                Thread.Sleep(2000);
 
                 // Step 2: Navigate to Events
                 Console.WriteLine("STEP 2: NAVIGATE TO EVENTS SECTION");
@@ -184,15 +158,13 @@ namespace FootballAdminSeleniumTest
                 {
                     Console.WriteLine($"Error finding/clicking Események button: {ex.Message}");
                 }
-                Thread.Sleep(900);
-                TakeScreenshot("4_events_page");
+                Thread.Sleep(500);
 
                 // Step 3: Create new event
                 Console.WriteLine("STEP 3: CREATE A NEW EVENT");
                 string ligaName = "esemény";
                 Console.WriteLine($"Creating event with liga name: {ligaName}");
-
-                // Click add button
+                
                 By[] addButtonSelectors = {
                     By.ClassName("action-button"),
                     By.XPath("//button[contains(text(), 'Add')]"),
@@ -201,13 +173,11 @@ namespace FootballAdminSeleniumTest
                     By.XPath("//button[contains(@class, 'add')]")
                 };
                 ClickElement(addButtonSelectors, "add button");
-                Thread.Sleep(3000);
-                TakeScreenshot("5_event_form");
+                Thread.Sleep(1500);
 
                 // Fill form
                 try
                 {
-                    // Liga field
                     try
                     {
                         var ligaInput = WaitForElement(By.Id("liga"));
@@ -223,8 +193,7 @@ namespace FootballAdminSeleniumTest
                             inputs[0].SendKeys(ligaName);
                         }
                     }
-
-                    // Round field
+                    
                     try
                     {
                         var roundInput = WaitForElement(By.Id("round"));
@@ -240,8 +209,7 @@ namespace FootballAdminSeleniumTest
                             inputs[1].SendKeys("1");
                         }
                     }
-
-                    // Date fields
+                    
                     string startDate = DateTime.Now.ToString("yyyy-MM-dd");
                     string endDate = DateTime.Now.AddMonths(1).ToString("yyyy-MM-dd");
                     Console.WriteLine($"Using start date: {startDate}, end date: {endDate}");
@@ -268,8 +236,7 @@ namespace FootballAdminSeleniumTest
                     {
                         Console.WriteLine($"Error with date fields: {ex.Message}");
                     }
-
-                    // Status field
+                    
                     try
                     {
                         var statusDropdown = WaitForElement(By.Id("esemenyStatus"));
@@ -287,17 +254,13 @@ namespace FootballAdminSeleniumTest
                             Console.WriteLine($"Status selection failed: {innerEx.Message}");
                         }
                     }
-
-                    TakeScreenshot("6_form_filled");
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error filling out form: {ex.Message}");
-                    TakeScreenshot("form_fill_error");
                     throw;
                 }
-
-                // Submit form
+                
                 By[] submitButtonSelectors = {
                     By.CssSelector(".form-button.submit"),
                     By.CssSelector("button[type='submit']"),
@@ -306,10 +269,8 @@ namespace FootballAdminSeleniumTest
                     By.XPath("//button[contains(text(), 'Create')]")
                 };
                 ClickElement(submitButtonSelectors, "submit button");
-                TakeScreenshot("7_form_submitted");
-                Thread.Sleep(5000);
-
-                // Check for success/error messages
+                Thread.Sleep(1500);
+                
                 try
                 {
                     var successMessages = driver.FindElements(By.XPath("//*[contains(text(), 'success') or contains(text(), 'Success') or contains(text(), 'created')]"));
@@ -328,15 +289,16 @@ namespace FootballAdminSeleniumTest
                 {
                     Console.WriteLine($"Error checking messages: {ex.Message}");
                 }
-
+                
                 // Navigate to competition page
+                Console.WriteLine("STEP 4: EXITING ADMIN PANEL AND GOING TO COMPETITION PAGE");
                 try
                 {
                     var viewEventsButtons = driver.FindElements(By.XPath("//*[contains(text(), 'View') and contains(text(), 'Event')]"));
                     if (viewEventsButtons.Count > 0)
                     {
                         js.ExecuteScript("arguments[0].click();", viewEventsButtons[0]);
-                        Thread.Sleep(3000);
+                        Thread.Sleep(1000);
                     }
                     else
                     {
@@ -347,10 +309,8 @@ namespace FootballAdminSeleniumTest
                 {
                     driver.Navigate().GoToUrl("https://focistak.netlify.app/competetion");
                 }
-                Thread.Sleep(5000);
-                TakeScreenshot("8_competition_page");
-
-                // Check if event is displayed
+                Thread.Sleep(2000);
+                
                 Console.WriteLine("STEP 5: CHECKING IF EVENT IS DISPLAYED");
                 CheckForEvent(ligaName);
 
@@ -360,7 +320,6 @@ namespace FootballAdminSeleniumTest
             {
                 Console.WriteLine($"Test failed: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                TakeScreenshot("error");
                 throw;
             }
         }
@@ -374,45 +333,38 @@ namespace FootballAdminSeleniumTest
                 {
                     Console.WriteLine($"SUCCESS: Event with liga name '{ligaName}' found on the page!");
                     js.ExecuteScript("arguments[0].style.border='3px solid red'", eventElements[0]);
-                    TakeScreenshot("9_event_found");
                     return;
                 }
 
                 Console.WriteLine("Refreshing the competition page and checking again...");
                 driver.Navigate().Refresh();
-                Thread.Sleep(5000);
+                Thread.Sleep(2000);
 
                 eventElements = driver.FindElements(By.XPath($"//*[contains(text(), '{ligaName}')]"));
                 if (eventElements.Count > 0)
                 {
                     Console.WriteLine($"SUCCESS after refresh: Event with liga name '{ligaName}' found on the page!");
                     js.ExecuteScript("arguments[0].style.border='3px solid red'", eventElements[0]);
-                    TakeScreenshot("10_event_found_after_refresh");
                     return;
                 }
-
-                // Try partial match
+                
                 string partialName = ligaName.Split('_')[0];
                 var partialMatches = driver.FindElements(By.XPath($"//*[contains(text(), '{partialName}')]"));
                 if (partialMatches.Count > 0)
                 {
                     Console.WriteLine($"Found partial match for '{partialName}' on the page");
                     js.ExecuteScript("arguments[0].style.border='3px solid orange'", partialMatches[0]);
-                    TakeScreenshot("11_partial_match_found");
                 }
                 else
                 {
                     Console.WriteLine($"FAILURE: No events matching '{ligaName}' or '{partialName}' found after refresh");
-                    TakeScreenshot("12_full_page_no_event_found");
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error checking for event: {ex.Message}");
-                TakeScreenshot("event_check_error");
             }
         }
-
         public void Cleanup()
         {
             driver?.Quit();
